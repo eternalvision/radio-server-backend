@@ -1,14 +1,44 @@
 import { join, relative, resolve, basename } from 'path';
-import { readdirSync } from 'fs';
+import { readdirSync, execFileSync } from 'fs';
 import { execSync } from 'child_process';
 import config from '../config.js';
 
 const { TRACK_DIR } = config;
 
+const execJSON = (bin, args) => {
+  const out = execFileSync(bin, args, { encoding: 'utf8' });
+  return JSON.parse(out);
+};
+
+const hasAttachedCover = (filePath) => {
+  try {
+    const probe = execJSON('ffprobe', [
+      '-v', 'error',
+      '-print_format', 'json',
+      '-show_streams',
+      filePath
+    ]);
+    return (probe.streams || []).some(
+      s => (s.disposition && s.disposition.attached_pic === 1) || s.codec_type === 'video'
+    );
+  } catch {
+    return false;
+  }
+};
+
+
 const extractCoverImageBase64 = (filePath) => {
   try {
-    const cmd = `ffmpeg -v error -i "${filePath}" -an -vcodec mjpeg -f image2pipe -frames:v 1 -`;
-    const buffer = execSync(cmd);
+    if (!hasAttachedCover(filePath)) return null;
+    const buffer = execFileSync('ffmpeg', [
+      '-v', 'error',
+      '-i', filePath,
+      '-an',
+      '-vcodec', 'mjpeg',
+      '-f', 'image2pipe',
+      '-frames:v', '1',
+      '-'
+    ]);
     return `data:image/jpeg;base64,${buffer.toString('base64')}`;
   } catch (err) {
     console.error('[extractCoverImageBase64] error:', err.message);
@@ -18,15 +48,17 @@ const extractCoverImageBase64 = (filePath) => {
 
 export const getTrackMetadata = (absolutePath) => {
   try {
-    const cmd = `ffprobe -v error -select_streams a:0 -show_entries format=duration:format_tags=title,artist,album -of json "${absolutePath}"`;
-    const result = execSync(cmd).toString();
-    const parsed = JSON.parse(result);
+    const parsed = execJSON('ffprobe', [
+      '-v', 'error',
+      '-select_streams', 'a:0',
+      '-show_entries', 'format=duration:format_tags=title,artist,album',
+      '-of', 'json',
+      absolutePath
+    ]);
 
     const durationSec = parseFloat(parsed.format.duration);
     const minutes = Math.floor(durationSec / 60);
-    const seconds = Math.round(durationSec % 60)
-      .toString()
-      .padStart(2, '0');
+    const seconds = Math.round(durationSec % 60).toString().padStart(2, '0');
 
     const cover = extractCoverImageBase64(absolutePath);
 
@@ -63,10 +95,19 @@ export const buildStructure = (base, parts, trackName, root) => {
 export const findTracksAsStructuredTree = (dir, baseDir = TRACK_DIR, limit = 1000, offset = 0) => {
   const structure = {};
   const allTracks = [];
+  const SKIP_DIRS = new Set(['.git', '.vscode', 'node_modules', '.cache', 'snap']);
 
   const walk = (currentDir) => {
-    const entries = readdirSync(currentDir, { withFileTypes: true });
+    let entries = [];
+    try {
+      entries = readdirSync(currentDir, { withFileTypes: true });
+    } catch {
+      return;
+    }
     for (const entry of entries) {
+      if (entry.name.startsWith('.') && entry.isDirectory()) {
+        if (SKIP_DIRS.has(entry.name)) continue;
+      }
       const fullPath = join(currentDir, entry.name);
       if (entry.isDirectory()) {
         walk(fullPath);

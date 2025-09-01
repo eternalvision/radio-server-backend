@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # === CONFIG ===
-TRACK_DIR="/media/sasha/TOSHIBA"
+TRACK_DIR="/home/sasha/Music"
 TRACK="$1"
 TRACK_PATH="$TRACK_DIR/$TRACK"
 AUDIO_SINK="RadioSink.monitor"
@@ -9,7 +9,7 @@ FFMPEG_LOG="/tmp/radio-ffmpeg.log"
 
 # === CHECK: подключён ли диск ===
 if [ ! -d "$TRACK_DIR" ]; then
-  echo "[start-radio] ❌ Директория $TRACK_DIR не найдена. Диск 'TOSHIBA' не подключен."
+  echo "[start-radio] ❌ Директория $TRACK_DIR не найдена."
   exit 1
 fi
 

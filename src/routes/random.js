@@ -12,25 +12,18 @@ export const randomRoute = async (req, res) => {
     const tracks = findTracksRecursively(TRACK_DIR);
 
     if (tracks.length === 0) {
-      return SendDataResponse({
-        res,
-        code: NOT_FOUND,
-        processResponse: 'NotFound',
-      });
+      return SendDataResponse({ res, code: NOT_FOUND, processResponse: 'NotFound' });
     }
 
     const relativeTrack = tracks[Math.floor(Math.random() * tracks.length)];
     const absolutePath = resolve(TRACK_DIR, relativeTrack);
     const data = getTrackMetadata(absolutePath);
 
-    SendDataResponse({
-      res,
-      code: OK,
-      processResponse: 'Success',
-      data,
-    });
+    SendDataResponse({ res, code: OK, processResponse: 'Success', data });
 
-    exec(`${START_SCRIPT} "${relativeTrack}"`);
+    execFile(START_SCRIPT, [relativeTrack], { shell: false }, (err) => {
+      if (err) console.error('[start script]', err.message);
+    });
   } catch (err) {
     return SendDataResponse({
       res,

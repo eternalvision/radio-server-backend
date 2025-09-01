@@ -10,9 +10,13 @@ const __dirname = path.dirname(__filename);
 const TRACK_DIR = process.env.TRACK_DIR;
 const START_SCRIPT = path.join(__dirname, '..', process.env.START_SCRIPT);
 const STOP_SCRIPT = path.join(__dirname, '..', process.env.STOP_SCRIPT);
+const HOST = process.env.HOST;
+const PORT = process.env.PORT;
 
 export default {
   TRACK_DIR,
   START_SCRIPT,
   STOP_SCRIPT,
+  HOST,
+  PORT,
 };
