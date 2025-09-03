@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { resolve } from 'path';
 import config from '../config.js';
 import { HttpCode, SendDataResponse } from '../helpers/index.js';

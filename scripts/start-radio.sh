@@ -4,7 +4,7 @@
 TRACK_DIR="/home/sasha/Music"
 TRACK="$1"
 TRACK_PATH="$TRACK_DIR/$TRACK"
-AUDIO_SINK="RadioSink.monitor"
+AUDIO_SINK="RadioSink"
 FFMPEG_LOG="/tmp/radio-ffmpeg.log"
 
 # === CHECK: подключён ли диск ===
